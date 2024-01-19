@@ -1,11 +1,28 @@
-import { useContext } from 'react'
-import { View, Text, StyleSheet, Pressable } from 'react-native'
+import { useContext, useEffect, useState } from 'react'
+import { View, Text, StyleSheet, Pressable, FlatList } from 'react-native'
 import { AntDesign } from '@expo/vector-icons'
 
 import { AuthContext } from '../context/AuthContext'
+import { ChatContext } from '../context/ChatContext'
+
+import { ChatItem } from '../components/ChatItem'
+import { CreateRoom } from '../components/CreateRoom'
+
+import { roomsMock } from '../utils/roomsMock'
 
 export default function ChatScreen() {
+  const [modalOpen, setModalOpen] = useState(false)
+
   const { user } = useContext(AuthContext)
+  const { rooms, getRooms, chatSocket } = useContext(ChatContext)
+
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     await getRooms()
+  //   }
+
+  //   fetchData()
+  // }, [])
 
   return (
     <View style={styles.mainWrapper}>
@@ -17,8 +34,25 @@ export default function ChatScreen() {
           </Pressable>
         </View>
       </View>
-      <View style={styles.listContainer}></View>
-      <View style={styles.bottomContainer}></View>
+      <View style={styles.listContainer}>
+        {roomsMock.length > 0 ? (
+          <FlatList
+            data={roomsMock}
+            renderItem={({ item }) => <ChatItem item={item} />}
+            keyExtractor={(item) => item.name.toString()}
+          />
+        ) : null}
+      </View>
+      <View style={styles.bottomContainer}>
+        <Pressable style={styles.button} onPress={() => setModalOpen(true)}>
+          <View>
+            <Text style={styles.button}>Criar uma sala</Text>
+          </View>
+        </Pressable>
+      </View>
+      {modalOpen && (
+        <CreateRoom modalVisible={modalOpen} setModalVisible={setModalOpen} />
+      )}
     </View>
   )
 }

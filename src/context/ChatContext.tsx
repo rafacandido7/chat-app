@@ -1,10 +1,17 @@
-import { createContext, ReactNode, useContext } from 'react'
-import { io, Socket } from 'socket.io-client'
-import { AuthContext } from './AuthContext'
 import axios, { AxiosResponse } from 'axios'
+import { createContext, ReactNode, useContext, useState } from 'react'
+import { io, Socket } from 'socket.io-client'
+
+import { AuthContext } from './AuthContext'
+
+import { IRoom } from '../interfaces/room.interface'
+import { JoinRoomDto } from '../interfaces/dtos/joinRoom.dto'
 
 interface ChatContextProps {
   getRooms: () => Promise<void>
+  joinRoom: (joinRoomDto: JoinRoomDto) => void
+  rooms: IRoom[]
+  chatSocket: Socket
 }
 
 export const ChatContext = createContext<ChatContextProps>(
@@ -24,11 +31,13 @@ const chatApi = axios.create({
 })
 
 export function ChatProvider({ children }: ChatProviderProps) {
-  const { accessToken } = useContext(AuthContext)
+  const [rooms, setRooms] = useState([])
+
+  const { user } = useContext(AuthContext)
 
   const chatSocket: Socket = io(baseURL, {
     query: {
-      token: accessToken,
+      token: user?.access_token,
     },
   })
 
@@ -36,13 +45,24 @@ export function ChatProvider({ children }: ChatProviderProps) {
     try {
       const response: AxiosResponse = await chatApi.get('/rooms')
 
-      if (response.data.statusCode !== 200) {
+      if (response.status !== 200) {
         throw new Error('Error finding rooms')
       }
+
+      setRooms(response.data)
+      return response.data
     } catch (error) {
       console.error(error)
     }
   }
 
-  return <Provider value={{ getRooms }}>{children}</Provider>
+  function joinRoom(joinRoomDto: JoinRoomDto) {
+    chatSocket.emit('joinRoom', joinRoomDto)
+  }
+
+  return (
+    <Provider value={{ getRooms, rooms, joinRoom, chatSocket }}>
+      {children}
+    </Provider>
+  )
 }

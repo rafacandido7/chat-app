@@ -20,7 +20,7 @@ export default function HomeScreen() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
 
-  const { signIn, accessToken } = useContext(AuthContext)
+  const { signIn, user } = useContext(AuthContext)
 
   async function handleSignIn() {
     if (username.trim() !== '') {
@@ -40,10 +40,10 @@ export default function HomeScreen() {
   }
 
   useEffect(() => {
-    if (accessToken) {
+    if (user) {
       navigation.navigate('ChatScreen' as never)
     }
-  }, [accessToken])
+  }, [user, navigation])
 
   return (
     <View style={styles.mainWrapper}>
@@ -58,6 +58,7 @@ export default function HomeScreen() {
               style={styles.loginInput}
               onChangeText={(value) => setUsername(value)}
               value={username}
+              autoCapitalize="none"
             />
             <TextInput
               autoCorrect={false}
@@ -65,6 +66,7 @@ export default function HomeScreen() {
               style={styles.loginInput}
               onChangeText={(value) => setPassword(value)}
               value={password}
+              secureTextEntry={true}
             />
           </View>
           <View style={styles.buttonWrapper}>

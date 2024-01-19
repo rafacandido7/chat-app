@@ -1,13 +1,10 @@
 import { createContext, ReactNode, useState } from 'react'
 import axios, { AxiosResponse } from 'axios'
 import { IUser } from '../interfaces/user.interface'
+import UserLoginDto from '../interfaces/dtos/userLogin.dto'
 
 interface AuthContextProps {
-  accessToken: string | undefined
-  signIn: (credentials: {
-    username: string
-    password: string
-  }) => Promise<boolean>
+  signIn: (credentials: UserLoginDto) => Promise<boolean>
   user: IUser | undefined
 }
 
@@ -29,13 +26,15 @@ export const authApi = axios.create({
 })
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [accessToken, setAccessToken] = useState<string | undefined>(undefined)
   const [user, setUser] = useState<IUser | undefined>(undefined)
 
-  async function signIn({ username, password }: IUser): Promise<boolean> {
+  async function signIn({
+    username,
+    password,
+  }: UserLoginDto): Promise<boolean> {
     try {
       const response: AxiosResponse = await authApi.post('/auth/login', {
-        username: username.toLowerCase(),
+        username,
         password,
       })
 
@@ -45,8 +44,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       const { access_token } = response.data.data
 
-      setAccessToken(access_token)
-      setUser({ username, password })
+      const userInfo: AxiosResponse = await authApi.get('/users/me', {
+        headers: { Authorization: `Bearer ${access_token}` },
+      })
+
+      const { _id } = userInfo.data.data
+
+      setUser({ username, password, id: _id, access_token })
 
       return true
     } catch (error) {
@@ -55,5 +59,5 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }
 
-  return <Provider value={{ accessToken, signIn, user }}>{children}</Provider>
+  return <Provider value={{ signIn, user }}>{children}</Provider>
 }
